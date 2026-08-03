@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { HashRouter, Routes, Route, useLocation, Link } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation, Link, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from '@/components/ui/sonner';
 import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { SearchProvider } from '@/contexts/SearchContext';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { ROUTES } from '@/lib/routes';
@@ -87,6 +87,20 @@ function ScrollToTop() {
   return null;
 }
 
+function ProtectedRoute({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) return null;
+  if (!user) {
+    const from = `${location.pathname}${location.search}`;
+    return <Navigate to={ROUTES.LOGIN} replace state={{ from }} />;
+  }
+  if (admin && user.role !== 'ADMIN') return <Navigate to={ROUTES.ACCOUNT} replace />;
+
+  return children;
+}
+
 function AppRoutes() {
   const location = useLocation();
 
@@ -114,11 +128,12 @@ function AppRoutes() {
           <Route path={ROUTES.FORGOT_PASSWORD} element={<PageLayout noFooter><PageTransition><SimplePage title="FJALËKALIMI I HARRUAR" message="Funksioni i resetimit është duke u zhvilluar." /></PageTransition></PageLayout>} />
 
           {/* Account */}
-          <Route path={ROUTES.ACCOUNT}          element={<PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout>} />
-          <Route path={ROUTES.ACCOUNT_ORDERS}   element={<PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout>} />
-          <Route path={ROUTES.ACCOUNT_PROFILE}  element={<PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout>} />
-          <Route path={ROUTES.ACCOUNT_ADDRESSES}element={<PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout>} />
-          <Route path={ROUTES.ACCOUNT_SETTINGS} element={<PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout>} />
+          <Route path={ROUTES.ACCOUNT}          element={<ProtectedRoute><PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout></ProtectedRoute>} />
+          <Route path={ROUTES.ACCOUNT_ORDERS}   element={<ProtectedRoute><PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout></ProtectedRoute>} />
+          <Route path={ROUTES.ACCOUNT_ORDER_PARAM} element={<ProtectedRoute><PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout></ProtectedRoute>} />
+          <Route path={ROUTES.ACCOUNT_PROFILE}  element={<ProtectedRoute><PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout></ProtectedRoute>} />
+          <Route path={ROUTES.ACCOUNT_ADDRESSES}element={<ProtectedRoute><PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout></ProtectedRoute>} />
+          <Route path={ROUTES.ACCOUNT_SETTINGS} element={<ProtectedRoute><PageLayout><PageTransition><AccountPage /></PageTransition></PageLayout></ProtectedRoute>} />
 
           {/* Info */}
           <Route path={ROUTES.CONTACT}    element={<PageLayout><PageTransition><ContactPage /></PageTransition></PageLayout>} />
@@ -130,7 +145,7 @@ function AppRoutes() {
           <Route path={ROUTES.TERMS}      element={<PageLayout><PageTransition><TermsPage /></PageTransition></PageLayout>} />
 
           {/* Admin */}
-          <Route path="/admin/*" element={<PageLayout noFooter><PageTransition><AdminDashboard /></PageTransition></PageLayout>} />
+          <Route path="/admin/*" element={<ProtectedRoute admin><PageLayout noFooter><PageTransition><AdminDashboard /></PageTransition></PageLayout></ProtectedRoute>} />
 
           {/* 404 */}
           <Route path="*" element={<PageLayout><PageTransition><NotFoundPage /></PageTransition></PageLayout>} />

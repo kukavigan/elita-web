@@ -10,7 +10,7 @@ import { ROUTES } from '@/lib/routes';
 import { ApiError } from '@/lib/apiClient';
 
 const schema = z.object({
-  email: z.string().email('Adresa e emailit nuk është e vlefshme.'),
+  email: z.string().trim().email('Adresa e emailit nuk është e vlefshme.'),
   password: z.string().min(1, 'Fjalëkalimi është i detyrueshëm.'),
 });
 type FormData = z.infer<typeof schema>;
@@ -18,17 +18,20 @@ type FormData = z.infer<typeof schema>;
 const HERO = 'https://images.pexels.com/photos/894557/pexels-photo-894557.jpeg?auto=compress&cs=tinysrgb&h=1200&w=900';
 
 export function LoginPage() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate   = useNavigate();
   const location   = useLocation();
   const [showPw, setShowPw] = useState(false);
 
-  const from = (location.state as { from?: string })?.from ?? ROUTES.ACCOUNT;
+  const requestedFrom = (location.state as { from?: unknown } | null)?.from;
+  const from = typeof requestedFrom === 'string' && requestedFrom.startsWith('/')
+    ? requestedFrom
+    : ROUTES.ACCOUNT;
 
   useEffect(() => {
-    if (isAuthenticated) navigate(from, { replace: true });
+    if (!isLoading && isAuthenticated) navigate(from, { replace: true });
     document.title = 'Kyçu — Elita5 Store';
-  }, [isAuthenticated, navigate, from]);
+  }, [isAuthenticated, isLoading, navigate, from]);
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, setError } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -104,16 +107,9 @@ export function LoginPage() {
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 p-4 bg-[var(--c-bg-3)] border border-[var(--c-border)]">
-            <p className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--c-text-3)] mb-2">Kredenciale Demo</p>
-            <p className="font-mono text-[10px] text-[var(--c-text-2)]">fan@elita5.com / elita5fan</p>
-            <p className="font-mono text-[10px] text-[var(--c-text-2)]">admin@elita5.com / Admin@Elita5#2025</p>
-          </div>
-
           <p className="font-mono text-[11px] tracking-wide text-[var(--c-text-3)] text-center mt-8">
             Nuk keni llogari?{' '}
-            <Link to={ROUTES.REGISTER} className="text-[var(--c-text)] hover:text-[var(--c-red-hi)] transition-colors font-semibold">Regjistrohu</Link>
+            <Link to={ROUTES.REGISTER} state={location.state} className="text-[var(--c-text)] hover:text-[var(--c-red-hi)] transition-colors font-semibold">Regjistrohu</Link>
           </p>
         </motion.div>
       </div>

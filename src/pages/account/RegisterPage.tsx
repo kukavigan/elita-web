@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
@@ -12,7 +12,7 @@ import { ApiError } from '@/lib/apiClient';
 const schema = z.object({
   firstName: z.string().min(2, 'Emri duhet të ketë të paktën 2 karaktere.'),
   lastName: z.string().min(2, 'Mbiemri duhet të ketë të paktën 2 karaktere.'),
-  email: z.string().email('Adresa e emailit nuk është e vlefshme.'),
+  email: z.string().trim().email('Adresa e emailit nuk është e vlefshme.'),
   phone: z.string().optional(),
   password: z.string().min(8, 'Fjalëkalimi duhet të ketë të paktën 8 karaktere.'),
   confirmPassword: z.string(),
@@ -23,14 +23,20 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function RegisterPage() {
-  const { register: authRegister, isAuthenticated } = useAuth();
+  const { register: authRegister, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
 
+  const requestedFrom = (location.state as { from?: unknown } | null)?.from;
+  const from = typeof requestedFrom === 'string' && requestedFrom.startsWith('/')
+    ? requestedFrom
+    : ROUTES.ACCOUNT;
+
   useEffect(() => {
-    if (isAuthenticated) navigate(ROUTES.ACCOUNT);
+    if (!isLoading && isAuthenticated) navigate(from, { replace: true });
     document.title = 'Regjistrohu — Elita5 Store';
-  }, [isAuthenticated, navigate]);
+  }, [from, isAuthenticated, isLoading, navigate]);
 
   const {
     register,
@@ -48,7 +54,6 @@ export function RegisterPage() {
         password: data.password,
         phone: data.phone,
       });
-      navigate(ROUTES.ACCOUNT);
     } catch (err) {
       setError('root', {
         message: err instanceof ApiError ? err.message : 'Gabim gjatë regjistrimit.',

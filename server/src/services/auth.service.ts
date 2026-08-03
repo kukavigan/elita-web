@@ -20,7 +20,8 @@ export const authService = {
     password: string;
     phone?: string;
   }) {
-    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    const email = data.email.toLowerCase().trim();
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new AppError(409, 'Kjo adresë emaili është tashmë e regjistruar.', 'EMAIL_EXISTS');
     }
@@ -31,7 +32,7 @@ export const authService = {
       data: {
         firstName: data.firstName,
         lastName: data.lastName,
-        email: data.email.toLowerCase().trim(),
+        email,
         passwordHash,
         phone: data.phone,
       },

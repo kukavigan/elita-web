@@ -2,7 +2,7 @@
  * Centralized API service — talks to the Express/Prisma backend.
  * All product data comes from the real database; no mock data.
  */
-import { get, post, put, del } from '@/lib/apiClient';
+import { clearToken, del, get, getToken, post, put } from '@/lib/apiClient';
 
 // ─── Type helpers ────────────────────────────────────────────────────────────
 
@@ -323,9 +323,12 @@ export const api = {
     login: (email: string, password: string) => authApi.login(email, password),
     register: (data: { firstName: string; lastName: string; email: string; password: string; phone?: string }) =>
       authApi.register(data),
-    logout: () => Promise.resolve(),
+    logout: () => {
+      clearToken();
+      return Promise.resolve();
+    },
     getCurrentUser: () => {
-      const token = localStorage.getItem('e5_token');
+      const token = getToken();
       if (!token) return Promise.resolve(null);
       return authApi.getMe().catch(() => null);
     },

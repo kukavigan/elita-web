@@ -4,7 +4,7 @@ export const registerSchema = z.object({
   body: z.object({
     firstName: z.string().min(2, 'Emri duhet të ketë të paktën 2 karaktere.'),
     lastName: z.string().min(2, 'Mbiemri duhet të ketë të paktën 2 karaktere.'),
-    email: z.string().email('Adresa e emailit nuk është e vlefshme.'),
+    email: z.string().trim().email('Adresa e emailit nuk është e vlefshme.'),
     password: z.string().min(8, 'Fjalëkalimi duhet të ketë të paktën 8 karaktere.'),
     phone: z.string().optional(),
   }),
@@ -12,7 +12,7 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
   body: z.object({
-    email: z.string().email('Adresa e emailit nuk është e vlefshme.'),
+    email: z.string().trim().email('Adresa e emailit nuk është e vlefshme.'),
     password: z.string().min(1, 'Fjalëkalimi është i detyrueshëm.'),
   }),
 });

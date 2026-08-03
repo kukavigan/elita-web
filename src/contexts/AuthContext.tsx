@@ -1,6 +1,13 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { authApi, ApiUser } from '@/services/api';
-import { setToken, clearToken } from '@/lib/apiClient';
+import {
+  AUTH_INVALIDATED_EVENT,
+  TOKEN_STORAGE_KEY,
+  getToken,
+  setToken,
+  clearToken,
+} from '@/lib/apiClient';
 
 interface AuthContextValue {
   user: ApiUser | null;
@@ -15,25 +22,47 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<ApiUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const clearSessionState = useCallback(() => {
+    setUser(null);
+    queryClient.clear();
+  }, [queryClient]);
+
   // Hydrate from stored token on mount
   useEffect(() => {
-    const token = localStorage.getItem('e5_token');
+    const token = getToken();
     if (!token) {
       setIsLoading(false);
       return;
     }
     authApi
       .getMe()
-      .then(setUser)
+      .then(currentUser => {
+        if (getToken()) setUser(currentUser);
+      })
       .catch(() => {
         clearToken();
-        setUser(null);
+        clearSessionState();
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [clearSessionState]);
+
+  useEffect(() => {
+    const handleInvalidatedSession = () => clearSessionState();
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === TOKEN_STORAGE_KEY && !event.newValue) clearSessionState();
+    };
+
+    window.addEventListener(AUTH_INVALIDATED_EVENT, handleInvalidatedSession);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener(AUTH_INVALIDATED_EVENT, handleInvalidatedSession);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [clearSessionState]);
 
   const login = async (email: string, password: string) => {
     const { user: u, token } = await authApi.login(email, password);
@@ -49,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     clearToken();
-    setUser(null);
+    clearSessionState();
   };
 
   const refreshUser = async () => {

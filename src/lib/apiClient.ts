@@ -1,4 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+const configuredApiBase = import.meta.env.VITE_API_URL?.trim();
+const API_BASE = (configuredApiBase || 'http://localhost:3001/api').replace(/\/+$/, '');
+
+export const TOKEN_STORAGE_KEY = 'e5_token';
+export const AUTH_INVALIDATED_EVENT = 'e5:auth-invalidated';
 
 class ApiError extends Error {
   constructor(
@@ -12,16 +16,17 @@ class ApiError extends Error {
   }
 }
 
-function getToken(): string | null {
-  return localStorage.getItem('e5_token');
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
 export function setToken(token: string) {
-  localStorage.setItem('e5_token', token);
+  localStorage.setItem(TOKEN_STORAGE_KEY, token);
 }
 
 export function clearToken() {
-  localStorage.removeItem('e5_token');
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  window.dispatchEvent(new Event(AUTH_INVALIDATED_EVENT));
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -37,6 +42,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     let body: { error?: string; code?: string; messages?: { field: string; message: string }[] } = {};
     try { body = await res.json(); } catch { /* empty */ }
+    if (
+      res.status === 401 &&
+      ['UNAUTHORIZED', 'INVALID_TOKEN', 'TOKEN_EXPIRED', 'SESSION_EXPIRED'].includes(body.code ?? '')
+    ) {
+      clearToken();
+    }
+
     throw new ApiError(
       res.status,
       body.code ?? 'ERROR',

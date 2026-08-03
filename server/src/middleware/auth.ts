@@ -46,11 +46,11 @@ export async function authenticate(
     next();
   } catch (err) {
     if (err instanceof AppError) return next(err);
-    if (err instanceof jwt.JsonWebTokenError) {
-      return next(new AppError(401, 'Token i pavlefshëm.', 'INVALID_TOKEN'));
-    }
     if (err instanceof jwt.TokenExpiredError) {
       return next(new AppError(401, 'Sesioni juaj ka skaduar.', 'TOKEN_EXPIRED'));
+    }
+    if (err instanceof jwt.JsonWebTokenError) {
+      return next(new AppError(401, 'Token i pavlefshëm.', 'INVALID_TOKEN'));
     }
     next(err);
   }
