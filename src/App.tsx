@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation, Link } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from '@/components/ui/sonner';
@@ -59,11 +59,11 @@ function NotFoundPage() {
     <main className="pt-[68px] min-h-screen flex items-center justify-center text-center px-6">
       <div>
         <p className="font-display text-[clamp(8rem,25vw,16rem)] leading-none text-[var(--c-border-hi)] tracking-tight select-none">404</p>
-        <h1 className="font-display text-4xl md:text-6xl text-[var(--c-text)] tracking-tight -mt-4">FAQJA NUK U GJEt</h1>
+        <h1 className="font-display text-4xl md:text-6xl text-[var(--c-text)] tracking-tight -mt-4">FAQJA NUK U GJET</h1>
         <p className="text-[var(--c-text-3)] text-sm mt-4 mb-8 max-w-xs mx-auto">Faqja që kërkuat nuk ekziston ose është zhvendosur.</p>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <a href={ROUTES.HOME} className="btn-primary text-[11px]">Kthehu në Ballina</a>
-          <a href={ROUTES.SHOP} className="btn-outline text-[11px]">Shiko Dyqanin</a>
+          <Link to={ROUTES.HOME} className="btn-primary text-[11px]">Kthehu në Ballina</Link>
+          <Link to={ROUTES.SHOP} className="btn-outline text-[11px]">Shiko Dyqanin</Link>
         </div>
       </div>
     </main>
@@ -147,7 +147,7 @@ export default function App() {
         <CartProvider>
           <WishlistProvider>
             <SearchProvider>
-              <BrowserRouter>
+              <HashRouter>
                 <AppRoutes />
                 <Toaster
                   theme="dark"
@@ -162,7 +162,7 @@ export default function App() {
                     },
                   }}
                 />
-              </BrowserRouter>
+              </HashRouter>
             </SearchProvider>
           </WishlistProvider>
         </CartProvider>
